@@ -3,69 +3,95 @@ using UnityEngine;
 public class CameraFader : MonoBehaviour
 {
     [Header("Setup")]
-    public Transform player; // Drag Lumi here
+    public Transform player;
 
     [Header("Fade Settings")]
-    [Range(0f, 1f)] public float fadedAlpha = 0.3f; // 0.3 means 30% visible
-    public float fadeSpeed = 5f; // How fast it turns transparent
+    [Range(0f, 1f)] public float fadedAlpha = 0.3f;
+    public float fadeSpeed = 5f;
 
     private Renderer currentObstacle;
     private Color originalColor;
 
     void Update()
     {
-        // Draw an invisible line between the Camera and Lumi
         Vector3 direction = player.position - transform.position;
         float distance = direction.magnitude;
 
         RaycastHit hit;
 
-        // Shoot the laser!
         if (Physics.Raycast(transform.position, direction, out hit, distance))
         {
-            // Did the laser hit a rock?
             if (hit.collider.CompareTag("Obstacle"))
             {
                 Renderer hitRenderer = hit.collider.GetComponent<Renderer>();
 
-                // If the camera sweeps across a NEW rock, reset the old one first
                 if (currentObstacle != null && currentObstacle != hitRenderer)
                 {
                     ResetObstacle();
                 }
 
-                // If this is a rock we haven't faded yet, save its original color!
                 if (currentObstacle == null)
                 {
                     currentObstacle = hitRenderer;
                     originalColor = currentObstacle.material.color;
+
+                    // NEW: Tell the rock it's time to become see-through
+                    SetMaterialToFade(currentObstacle.material);
                 }
 
-                // Smoothly fade the rock out
                 Color targetColor = new Color(originalColor.r, originalColor.g, originalColor.b, fadedAlpha);
                 currentObstacle.material.color = Color.Lerp(currentObstacle.material.color, targetColor, Time.deltaTime * fadeSpeed);
 
-                return; // Stop the script here so it doesn't instantly reset
+                return;
             }
         }
 
-        // If the laser hits nothing (or hits Lumi), make sure the rock goes back to solid!
         ResetObstacle();
     }
 
-    // A mini-function that smoothly fades the rock back to normal
     void ResetObstacle()
     {
         if (currentObstacle != null)
         {
             currentObstacle.material.color = Color.Lerp(currentObstacle.material.color, originalColor, Time.deltaTime * fadeSpeed);
 
-            // Once it's basically solid again, completely clear its memory
-            if (currentObstacle.material.color.a >= originalColor.a - 0.05f)
+            // Once it's back to solid (Alpha is nearly 1)
+            if (currentObstacle.material.color.a >= 0.95f)
             {
                 currentObstacle.material.color = originalColor;
+
+                // NEW: Tell the rock it's solid again so it fixes the "Z-Write" depth!
+                SetMaterialToOpaque(currentObstacle.material);
+
                 currentObstacle = null;
             }
         }
+    }
+
+    // --- THE "SHAPESHIFT" MATH ---
+    // These functions manually talk to the Unity Standard Shader
+
+    void SetMaterialToFade(Material mat)
+    {
+        mat.SetFloat("_Mode", 2); // 2 is the index for "Fade" mode
+        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        mat.SetInt("_ZWrite", 0); // Turn off depth writing for transparency
+        mat.DisableKeyword("_ALPHATEST_ON");
+        mat.EnableKeyword("_ALPHABLEND_ON");
+        mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        mat.renderQueue = 3000; // Move it to the "Transparent" draw layer
+    }
+
+    void SetMaterialToOpaque(Material mat)
+    {
+        mat.SetFloat("_Mode", 0); // 0 is the index for "Opaque" mode
+        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
+        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
+        mat.SetInt("_ZWrite", 1); // Turn depth writing BACK ON! (This fixes Lumi)
+        mat.DisableKeyword("_ALPHATEST_ON");
+        mat.DisableKeyword("_ALPHABLEND_ON");
+        mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        mat.renderQueue = -1; // Reset to default "Geometry" draw layer
     }
 }
