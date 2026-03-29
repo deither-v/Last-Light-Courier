@@ -1,5 +1,5 @@
 using UnityEngine;
-using TMPro; // NEW: Required to control TextMeshPro UI!
+using TMPro;
 
 public class RunePuzzle : MonoBehaviour
 {
@@ -13,11 +13,14 @@ public class RunePuzzle : MonoBehaviour
     public GameObject gate;
 
     [Header("UI Elements")]
-    public TextMeshProUGUI interactionText; // NEW: The slot for your UI Text
+    public TextMeshProUGUI interactionText;
 
     [Header("Gate Settings")]
     public float gateOpenSpeed = 2f;
     public float gateOpenHeight = 3.5f;
+
+    [Header("Traps")] // NEW: The slot for your hidden fog
+    public GameObject pedestalTrap;
 
     private bool nearPickup = false;
     private bool nearDropoff = false;
@@ -30,7 +33,6 @@ public class RunePuzzle : MonoBehaviour
         if (carriedRune != null) carriedRune.SetActive(false);
         if (gate != null) gateTargetPosition = gate.transform.position + new Vector3(0, gateOpenHeight, 0);
 
-        // Hide the text when the game starts
         if (interactionText != null) interactionText.gameObject.SetActive(false);
     }
 
@@ -45,7 +47,12 @@ public class RunePuzzle : MonoBehaviour
                 pickupRune.SetActive(false);
                 carriedRune.SetActive(true);
 
-                // Hide text immediately after picking it up
+                // NEW: Spring the trap immediately when the rune is picked up!
+                if (pedestalTrap != null)
+                {
+                    pedestalTrap.SetActive(true);
+                }
+
                 if (interactionText != null) interactionText.gameObject.SetActive(false);
             }
             else if (nearDropoff && hasRune)
@@ -55,7 +62,6 @@ public class RunePuzzle : MonoBehaviour
                 dropoffRune.SetActive(true);
                 isGateOpening = true;
 
-                // Hide text immediately after placing it
                 if (interactionText != null) interactionText.gameObject.SetActive(false);
             }
         }
@@ -67,7 +73,6 @@ public class RunePuzzle : MonoBehaviour
         }
     }
 
-    // --- DETECTING THE PEDESTALS & SHOWING TEXT ---
     void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("PickupPedestal") && !hasRune)
@@ -91,7 +96,6 @@ public class RunePuzzle : MonoBehaviour
         }
     }
 
-    // --- HIDING TEXT WHEN WALKING AWAY ---
     void OnTriggerExit(Collider other)
     {
         if (other.CompareTag("PickupPedestal"))
