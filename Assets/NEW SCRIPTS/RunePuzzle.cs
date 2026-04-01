@@ -1,19 +1,26 @@
 using UnityEngine;
+using TMPro;
 
 public class RunePuzzle : MonoBehaviour
 {
     [Header("Puzzle Status")]
     public bool hasRune = false;
 
-    [Header("Puzzle Objects (Drag from Hierarchy)")]
-    public GameObject pickupRune;       // The rune on the first pedestal
-    public GameObject dropoffRune;      // The rune that appears on the empty pedestal
-    public GameObject carriedRune;      // NEW: The rune attached to Lumi's back!
-    public GameObject gate;             // The iron gate
+    [Header("Puzzle Objects")]
+    public GameObject pickupRune;
+    public GameObject dropoffRune;
+    public GameObject carriedRune;
+    public GameObject gate;
+
+    [Header("UI Elements")]
+    public TextMeshProUGUI interactionText;
 
     [Header("Gate Settings")]
     public float gateOpenSpeed = 2f;
     public float gateOpenHeight = 3.5f;
+
+    [Header("Traps")] // NEW: The slot for your hidden fog
+    public GameObject pedestalTrap;
 
     private bool nearPickup = false;
     private bool nearDropoff = false;
@@ -22,11 +29,11 @@ public class RunePuzzle : MonoBehaviour
 
     void Start()
     {
-        // Hide both the drop-off rune AND the backpack rune at the start
         if (dropoffRune != null) dropoffRune.SetActive(false);
         if (carriedRune != null) carriedRune.SetActive(false);
-
         if (gate != null) gateTargetPosition = gate.transform.position + new Vector3(0, gateOpenHeight, 0);
+
+        if (interactionText != null) interactionText.gameObject.SetActive(false);
     }
 
     void Update()
@@ -34,22 +41,28 @@ public class RunePuzzle : MonoBehaviour
         // --- INTERACTION LOGIC (Press E) ---
         if (Input.GetKeyDown(KeyCode.E))
         {
-            // Pick up the rune
             if (nearPickup && !hasRune)
             {
                 hasRune = true;
-                pickupRune.SetActive(false);  // Hide pedestal rune
-                carriedRune.SetActive(true);  // NEW: Show the rune on her back!
-                Debug.Log("Picked up the Light Rune!");
+                pickupRune.SetActive(false);
+                carriedRune.SetActive(true);
+
+                // NEW: Spring the trap immediately when the rune is picked up!
+                if (pedestalTrap != null)
+                {
+                    pedestalTrap.SetActive(true);
+                }
+
+                if (interactionText != null) interactionText.gameObject.SetActive(false);
             }
-            // Drop off the rune
             else if (nearDropoff && hasRune)
             {
                 hasRune = false;
-                carriedRune.SetActive(false); // NEW: Hide the rune on her back!
-                dropoffRune.SetActive(true);  // Show rune on the second pedestal
-                isGateOpening = true;         // Open the gate
-                Debug.Log("Placed the Light Rune! Gate opening!");
+                carriedRune.SetActive(false);
+                dropoffRune.SetActive(true);
+                isGateOpening = true;
+
+                if (interactionText != null) interactionText.gameObject.SetActive(false);
             }
         }
 
@@ -62,13 +75,39 @@ public class RunePuzzle : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("PickupPedestal")) nearPickup = true;
-        if (other.CompareTag("DropoffPedestal")) nearDropoff = true;
+        if (other.CompareTag("PickupPedestal") && !hasRune)
+        {
+            nearPickup = true;
+            if (interactionText != null)
+            {
+                interactionText.text = "Press E to get Light Rune";
+                interactionText.gameObject.SetActive(true);
+            }
+        }
+
+        if (other.CompareTag("DropoffPedestal") && hasRune)
+        {
+            nearDropoff = true;
+            if (interactionText != null)
+            {
+                interactionText.text = "Press E to place Light Rune";
+                interactionText.gameObject.SetActive(true);
+            }
+        }
     }
 
     void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("PickupPedestal")) nearPickup = false;
-        if (other.CompareTag("DropoffPedestal")) nearDropoff = false;
+        if (other.CompareTag("PickupPedestal"))
+        {
+            nearPickup = false;
+            if (interactionText != null) interactionText.gameObject.SetActive(false);
+        }
+
+        if (other.CompareTag("DropoffPedestal"))
+        {
+            nearDropoff = false;
+            if (interactionText != null) interactionText.gameObject.SetActive(false);
+        }
     }
 }
