@@ -8,6 +8,8 @@ TagManager:
   - DropoffPedestal
   - Darkness
   - Obstacle
+  - CinemachineTarget
+  - socket
   layers:
   - Default
   - TransparentFX
