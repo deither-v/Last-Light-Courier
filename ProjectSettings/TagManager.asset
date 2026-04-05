@@ -9,7 +9,7 @@ TagManager:
   - Darkness
   - Obstacle
   - CinemachineTarget
-  - socket
+  - Socket
   layers:
   - Default
   - TransparentFX
