@@ -14,7 +14,7 @@ public class StoryManager : MonoBehaviour
     [Header("Story Content")]
     [TextArea(5, 10)]
     public string[] storyPages; // Type your story parts here in the Inspector!
-    
+
     private int currentPage = 0;
 
     void Start()
@@ -72,6 +72,6 @@ public class StoryManager : MonoBehaviour
 
     public void StartGame()
     {
-        SceneManager.LoadScene("Level 1"); 
+        SceneManager.LoadScene("Level 1");
     }
 }
