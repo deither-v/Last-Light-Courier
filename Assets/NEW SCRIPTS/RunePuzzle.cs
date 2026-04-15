@@ -12,6 +12,9 @@ public class RunePuzzle : MonoBehaviour
     public GameObject carriedRune;
     public GameObject gate;
 
+    [Header("Wayfinding")] // NEW: The arrow logic
+    public GameObject pedestalArrow;
+
     [Header("UI Elements")]
     public TextMeshProUGUI interactionText;
 
@@ -19,7 +22,7 @@ public class RunePuzzle : MonoBehaviour
     public float gateOpenSpeed = 2f;
     public float gateOpenHeight = 3.5f;
 
-    [Header("Traps")] // NEW: The slot for your hidden fog
+    [Header("Traps")]
     public GameObject pedestalTrap;
 
     private bool nearPickup = false;
@@ -31,14 +34,16 @@ public class RunePuzzle : MonoBehaviour
     {
         if (dropoffRune != null) dropoffRune.SetActive(false);
         if (carriedRune != null) carriedRune.SetActive(false);
-        if (gate != null) gateTargetPosition = gate.transform.position + new Vector3(0, gateOpenHeight, 0);
 
+        // Ensure the arrow starts hidden
+        if (pedestalArrow != null) pedestalArrow.SetActive(false);
+
+        if (gate != null) gateTargetPosition = gate.transform.position + new Vector3(0, gateOpenHeight, 0);
         if (interactionText != null) interactionText.gameObject.SetActive(false);
     }
 
     void Update()
     {
-        // --- INTERACTION LOGIC (Press E) ---
         if (Input.GetKeyDown(KeyCode.E))
         {
             if (nearPickup && !hasRune)
@@ -47,12 +52,10 @@ public class RunePuzzle : MonoBehaviour
                 pickupRune.SetActive(false);
                 carriedRune.SetActive(true);
 
-                // NEW: Spring the trap immediately when the rune is picked up!
-                if (pedestalTrap != null)
-                {
-                    pedestalTrap.SetActive(true);
-                }
+                // --- NEW: TURN ON THE ARROW ---
+                if (pedestalArrow != null) pedestalArrow.SetActive(true);
 
+                if (pedestalTrap != null) pedestalTrap.SetActive(true);
                 if (interactionText != null) interactionText.gameObject.SetActive(false);
             }
             else if (nearDropoff && hasRune)
@@ -62,11 +65,13 @@ public class RunePuzzle : MonoBehaviour
                 dropoffRune.SetActive(true);
                 isGateOpening = true;
 
+                // --- NEW: HIDE THE ARROW (You reached the destination!) ---
+                if (pedestalArrow != null) pedestalArrow.SetActive(false);
+
                 if (interactionText != null) interactionText.gameObject.SetActive(false);
             }
         }
 
-        // --- GATE OPENING ANIMATION ---
         if (isGateOpening && gate != null)
         {
             gate.transform.position = Vector3.MoveTowards(gate.transform.position, gateTargetPosition, gateOpenSpeed * Time.deltaTime);
