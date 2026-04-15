@@ -2962,6 +2962,7 @@ MonoBehaviour:
     across the ruins of what was once alive..
   - And the one chosen to bear it is the..
   - Last Light Courier
+  - Use WASD to control your character and E to interact with objects.
 --- !u!1 &2093961088
 GameObject:
   m_ObjectHideFlags: 0
